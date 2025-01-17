@@ -58,7 +58,7 @@ class WeatherViewModelImpl: WeatherViewModel {
             viewState.send(.responseReceived)
         case .responseReceived:
             Task {
-                let result = await loadWeatherUseCase.execute(for: "city")
+                let result = await loadWeatherUseCase.execute(for: "London")
                 switch result {
                 case .success(let weatherData):
                     selectedCityData = weatherData
@@ -76,7 +76,7 @@ class WeatherViewModelImpl: WeatherViewModel {
     
     func getCities() {
         Task {
-            let result = await searchCitiesUseCase.execute(for: "")
+            let result = await searchCitiesUseCase.execute(for: "Lon")
             switch result {
             case .success(let citiesList):
                 cities = citiesList

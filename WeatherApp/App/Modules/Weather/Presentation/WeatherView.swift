@@ -65,6 +65,7 @@ struct WeatherView<ViewModel>: View where ViewModel: WeatherViewModel {
         VStack(spacing: 15) {
             AsyncImage(url: URL(string: selectedCity.conditionImageURL))
                 .frame(width: 128, height: 128)
+                .foregroundColor(.white)
             HStack {
                 Text(selectedCity.name)
                     .font(.system(size: 32))
