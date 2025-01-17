@@ -9,9 +9,17 @@ import SwiftUI
 
 @main
 struct WeatherApp: App {
+    var appCoordinator: Coordinator!
+    var appFactory: AppFactory!
+    
+    init() {
+        appFactory = AppFactoryImpl()
+        appCoordinator = AppCoordinator(appFactory: appFactory)
+    }
+    
     var body: some Scene {
         WindowGroup {
-            WeatherView()
+            appCoordinator.start()
         }
     }
 }

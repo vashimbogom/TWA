@@ -7,9 +7,9 @@
 
 import SwiftUI
 
-struct WeatherView: View {
+struct WeatherView<ViewModel>: View where ViewModel: WeatherViewModel {
     
-    @StateObject var viewModel: WeatherViewModel = WeatherViewModel()
+    @ObservedObject var viewModel: ViewModel
     
     var body: some View {
         
@@ -108,5 +108,5 @@ struct WeatherView: View {
 }
 
 #Preview {
-    WeatherView()
+    HomeWeatherFactoryImpl().makeModule()
 }

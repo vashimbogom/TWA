@@ -7,6 +7,16 @@
 
 import Combine
 
+protocol WeatherViewModel: ObservableObject {
+    
+    var state: StateController { get set }
+    var cities: [City] { get set }
+    var searchText: String { get set }
+    var selectedCityData: WeatherData? { get set }
+    
+    func changeState()
+}
+
 enum StateController {
     case initial
     case loading
@@ -15,7 +25,7 @@ enum StateController {
     case fail(error: String)
 }
 
-class WeatherViewModel: ObservableObject {
+class WeatherViewModelImpl: WeatherViewModel {
     
     @Published var state: StateController = .citySet
     @Published var cities: [City] = []
@@ -26,7 +36,14 @@ class WeatherViewModel: ObservableObject {
     private var viewState = PassthroughSubject<StateController, Never>()
     private var cancellables: Set<AnyCancellable> = []
     
-    init() {
+    private let loadWeatherUseCase: LoadWeatherUseCase
+    private let searchCitiesUseCase: SearchCitiesUseCase
+    
+    init(loadWeatherUseCase: LoadWeatherUseCase, searchCitiesUseCase: SearchCitiesUseCase) {
+        
+        self.loadWeatherUseCase = loadWeatherUseCase
+        self.searchCitiesUseCase = searchCitiesUseCase
+        
         viewState.sink { [weak self] state in
             self?.state = state
         }.store(in: &cancellables)
@@ -40,7 +57,15 @@ class WeatherViewModel: ObservableObject {
         case .loading:
             viewState.send(.responseReceived)
         case .responseReceived:
-            selectedCityData = WeatherData(name: "Hyderabad", region: "India", country: "India", lat: 2.34, lon: 3.22, temperatureInCelsius: 13, temperatureInFahrenheit: 70, humidity: 20, feelsLikeCelsius: 38, feelsLikeFahrenheit: 99, uv: 4.5, condition: "Overcast", conditionIcon: "//cdn.weatherapi.com/weather/64x64/night/122.png")
+            Task {
+                let result = await loadWeatherUseCase.execute(for: "city")
+                switch result {
+                case .success(let weatherData):
+                    selectedCityData = weatherData
+                case .failure(let error):
+                    print(error)
+                }
+            }
             viewState.send(.citySet)
         case .citySet:
             viewState.send(.fail(error: "error.localizedDescription"))
@@ -50,12 +75,15 @@ class WeatherViewModel: ObservableObject {
     }
     
     func getCities() {
-        cities = [
-            City(id: 1, name: "London", region: "City of London, Greater London", country: "UK", lat: 1.1, lon: 1.2, url: "www"),
-            City(id: 2, name: "Long Beach", region: "California", country: "USA", lat: 1.1, lon: 1.2, url: "www"),
-            City(id: 3, name: "Londrina", region: "Parana", country: "Brasil", lat: 1.1, lon: 1.2, url: "www"),
-            City(id: 4, name: "Longueuil", region: "Quebec", country: "Canada", lat: 1.1, lon: 1.2, url: "www")
-        ]
+        Task {
+            let result = await searchCitiesUseCase.execute(for: "")
+            switch result {
+            case .success(let citiesList):
+                cities = citiesList
+            case .failure(let error):
+                print(error)
+            }
+        }
     }
     
 }
