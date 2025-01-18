@@ -20,23 +20,18 @@ struct WeatherView<ViewModel>: View where ViewModel: WeatherViewModel {
                 switch viewModel.state {
                 case .initial:
                     showInitialView()
+                    
                 case .loading:
                     LoadingView()
+                    
                 case .responseReceived:
                     showCitiesListView()
+                    
                 case .citySet:
-                    if let selectedCity = viewModel.selectedCityData {
-                        showSelectedCityView(selectedCity: selectedCity)
-                    }
-                    else {
-                        ErrorView(errorMessage: "Loading Data Error")
-                    }
+                    showSelectedCityView()
+                    
                 case .fail(let error):
                     ErrorView(errorMessage: error)
-                }
-                
-                Button("- next >") {
-                    viewModel.changeState()
                 }
             }
             .frame(maxHeight: .infinity)
@@ -46,64 +41,94 @@ struct WeatherView<ViewModel>: View where ViewModel: WeatherViewModel {
     
     func showInitialView() -> some View {
         VStack {
-            Text("No City Selected")
+            Text(AppConstants.Weather.Strings.noCitySelected)
                 .font(.largeTitle)
-            Text("Please Search For A City")
+            Text(AppConstants.Weather.Strings.searchForACity)
         }
     }
     
     func showCitiesListView() -> some View {
         List {
-            ForEach(viewModel.cities) { city in
-                Text(city.name)
+            if viewModel.cities.isEmpty {
+                Text(AppConstants.Weather.Strings.noMatchesFound)
+            } else {
+                ForEach(viewModel.cities) { city in
+                    Button(action: {
+                        hideKeyboard()
+                        self.viewModel.didSelectCity(cityName: city.name)
+                    }, label:    {
+                        VStack(alignment: .leading) {
+                            Text(city.name)
+                            Text(city.country)
+                                .foregroundColor(.gray)
+                                .font(.caption)
+                        }
+                    })
+                    
+                }
             }
         }
     }
     
-    func showSelectedCityView(selectedCity: WeatherData) -> some View {
-        
-        VStack(spacing: 15) {
-            AsyncImage(url: URL(string: selectedCity.conditionImageURL))
-                .frame(width: 128, height: 128)
-                .foregroundColor(.white)
-            HStack {
-                Text(selectedCity.name)
-                    .font(.system(size: 32))
-                Text("➤")
-                    .font(.system(size: 22))
-                    .rotationEffect(Angle(degrees: -60))
-            }
-            
-            Text("\(selectedCity.currentTemperature)°")
-                .font(.largeTitle)
-            
-            VStack {
-                HStack(spacing: 35) {
-                    VStack {
-                        Text("Humidity")
-                            .foregroundColor(.gray)
-                        Text("\(selectedCity.humidity)%")
-                            .foregroundColor(.gray)
+    func showSelectedCityView() -> some View {
+        Group {
+            if let selectedCity = viewModel.selectedCityData {
+                VStack(spacing: AppConstants.ViewValues.vSpacing) {
+                    
+                    AsyncImage(url: URL(string: selectedCity.conditionImageURL))
+                        .frame(
+                            width: AppConstants.ViewValues.weatherIconSize,
+                            height: AppConstants.ViewValues.weatherIconSize
+                        )
+                    HStack {
+                        WText(text: selectedCity.name, fontSize: AppConstants.ViewValues.cityFontSize)
+                        Image(AppConstants.Icons.location)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: AppConstants.ViewValues.locationIconSize, height: AppConstants.ViewValues.locationIconSize)
+                        
+                    }
+                    
+                    HStack(alignment: .top) {
+                        WText(
+                            text: String(format: AppConstants.Weather.Strings.currentTemperature, selectedCity.currentTemperature),
+                            fontSize: AppConstants.ViewValues.temperatureFontSize)
+                        WText(
+                            text: AppConstants.Weather.Strings.degreeSymbol,
+                            fontSize: AppConstants.ViewValues.cityFontSize)
+                        .padding(.top, AppConstants.ViewValues.p5)
                     }
                     
                     VStack {
-                        Text("UV")
-                            .foregroundColor(.gray)
-                        Text(selectedCity.currentUV)
-                            .foregroundColor(.gray)
+                        HStack(spacing: AppConstants.ViewValues.hSpacing) {
+                            VStack {
+                                WText(text: AppConstants.Weather.Strings.humidity, fontSize: AppConstants.ViewValues.fontSize12)
+                                    .foregroundColor(AppConstants.Colors.gray)
+                                WText(text: String(format: AppConstants.Weather.Strings.humidityValue, selectedCity.humidity), fontSize: AppConstants.ViewValues.fontSize15)
+                                    .foregroundColor(AppConstants.Colors.darkGray)
+                            }
+                            VStack {
+                                WText(text: AppConstants.Weather.Strings.uv, fontSize: AppConstants.ViewValues.fontSize12)
+                                    .foregroundColor(AppConstants.Colors.gray)
+                                WText(text: selectedCity.currentUV, fontSize: AppConstants.ViewValues.fontSize15)
+                                    .foregroundColor(AppConstants.Colors.darkGray)
+                            }
+                            VStack {
+                                WText(text: AppConstants.Weather.Strings.feelsLike, fontSize: AppConstants.ViewValues.fontSize12)
+                                    .foregroundColor(AppConstants.Colors.gray)
+                                WText(text: String(format: AppConstants.Weather.Strings.feelsLikeValue, selectedCity.currentFeelsLike), fontSize: AppConstants.ViewValues.fontSize15)
+                                    .foregroundColor(AppConstants.Colors.darkGray)
+                            }
+                        }
                     }
-                    
-                    VStack {
-                        Text("Feels Like")
-                            .foregroundColor(.gray)
-                        Text("\(selectedCity.currentFeelsLike)°")
-                            .foregroundColor(.gray)
-                    }
+                    .padding()
+                    .background(AppConstants.Colors.lightGray)
+                    .cornerRadius(AppConstants.ViewValues.cornerRadius)
                 }
             }
-            .padding()
-            .background(.black.opacity(0.2))
-            .cornerRadius(16)
+            else {
+                ErrorView(errorMessage: AppConstants.Weather.Strings.Errors.noData)
+            }
         }
     }
 }

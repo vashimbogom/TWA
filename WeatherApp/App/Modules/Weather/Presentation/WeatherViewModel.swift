@@ -5,6 +5,7 @@
 //  Created by Lord Jose Lopez on 17/01/25.
 //
 
+import Foundation
 import Combine
 
 protocol WeatherViewModel: ObservableObject {
@@ -14,7 +15,7 @@ protocol WeatherViewModel: ObservableObject {
     var searchText: String { get set }
     var selectedCityData: WeatherData? { get set }
     
-    func changeState()
+    func didSelectCity(cityName: String)
 }
 
 enum StateController {
@@ -25,11 +26,11 @@ enum StateController {
     case fail(error: String)
 }
 
-class WeatherViewModelImpl: WeatherViewModel {
+final class WeatherViewModelImpl: WeatherViewModel {
     
-    @Published var state: StateController = .citySet
+    @Published var state: StateController = .initial
     @Published var cities: [City] = []
-    @Published var searchText: String = ""
+    @Published var searchText: String = AppConstants.GlobalStrings.emptyString
     
     var selectedCityData: WeatherData?
     
@@ -44,45 +45,73 @@ class WeatherViewModelImpl: WeatherViewModel {
         self.loadWeatherUseCase = loadWeatherUseCase
         self.searchCitiesUseCase = searchCitiesUseCase
         
-        viewState.sink { [weak self] state in
-            self?.state = state
-        }.store(in: &cancellables)
+        addSubscribers()
+        verifyStoredCity()
     }
     
-    func changeState() {
-        switch state {
-        case .initial:
-            viewState.send(.loading)
-            getCities()
-        case .loading:
-            viewState.send(.responseReceived)
-        case .responseReceived:
-            Task {
-                let result = await loadWeatherUseCase.execute(for: "London")
-                switch result {
-                case .success(let weatherData):
-                    selectedCityData = weatherData
-                case .failure(let error):
-                    print(error)
+    
+    private func addSubscribers() {
+        viewState
+            .sink { [weak self] state in
+                self?.state = state
+            }
+            .store(in: &cancellables)
+        
+        $searchText
+            .debounce(for: 0.3, scheduler: DispatchQueue.main)
+            .sink { [weak self] searchStr in
+                Task {
+                    await self?.searchCities(with: searchStr)
                 }
             }
-            viewState.send(.citySet)
-        case .citySet:
-            viewState.send(.fail(error: "error.localizedDescription"))
-        case .fail(_):
+            .store(in: &cancellables)
+    }
+    
+    private func verifyStoredCity() {
+        if let city = UserDefaults.standard.string(forKey: AppConstants.GlobalStrings.Storage.cityKey) {
+            Task {
+                await getWeatherData(for: city)
+            }
+        } else {
             viewState.send(.initial)
         }
     }
     
-    func getCities() {
+    @MainActor
+    private func searchCities(with nameLike: String) async {
+        
+        if searchText.isEmpty { return }
+        viewState.send(.loading)
+        
+        let result = await searchCitiesUseCase.execute(for: nameLike)
+        switch result {
+        case .success(let citiesList):
+            cities = citiesList
+            viewState.send(.responseReceived)
+        case .failure(let error):
+            viewState.send(.fail(error: error.localizedDescription))
+        }
+    }
+    
+    @MainActor
+    private func getWeatherData(for city: String) async {
+        viewState.send(.loading)
+        
+        let result = await loadWeatherUseCase.execute(for: city)
+        switch result {
+        case .success(let weatherData):
+            selectedCityData = weatherData
+            viewState.send(.citySet)
+        case .failure(let error):
+            viewState.send(.fail(error: error.localizedDescription))
+        }
+    }
+    
+    func didSelectCity(cityName: String) {
+        UserDefaults.standard.set(cityName, forKey: AppConstants.GlobalStrings.Storage.cityKey)
+        searchText = AppConstants.GlobalStrings.emptyString
         Task {
-            let result = await searchCitiesUseCase.execute(for: "Lon")
-            switch result {
-            case .success(let citiesList):
-                cities = citiesList
-            case .failure(let error):
-                print(error)
-            }
+            await getWeatherData(for: cityName)
         }
     }
     

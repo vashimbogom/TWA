@@ -4,7 +4,6 @@
 //
 //  Created by Lord Jose Lopez on 17/01/25.
 //
-
 import SwiftUI
 
 struct ErrorView: View {
@@ -12,18 +11,18 @@ struct ErrorView: View {
     
     var body: some View {
         VStack {
-            Image(systemName: "sun.max.trianglebadge.exclamationmark")
-                .foregroundColor(.orange)
-                .font(.system(size: 72))
-            Text("Something Unexpected Happened.")
+            Image(systemName: AppConstants.Icons.error)
+                .foregroundColor(AppConstants.Colors.errorOrange)
+                .font(.system(size: AppConstants.ViewValues.temperatureFontSize))
+            Text(AppConstants.Weather.Strings.Errors.errorMessage)
             Text(errorMessage)
-            Text("Please Try Again.")
+            Text(AppConstants.Weather.Strings.Errors.tryAgain)
                 .font(.caption)
-                .foregroundColor(.gray)
+                .foregroundColor(AppConstants.Colors.gray)
         }
     }
 }
 
 #Preview {
-    ErrorView(errorMessage: "")
+    ErrorView(errorMessage: AppConstants.GlobalStrings.emptyString)
 }
