@@ -1,4 +1,4 @@
-# TWA
+# The WeatherApp
 A cool App that allows users to search for a city, display its weather on the home screen, and persist the selected city across launches.
 
 ![app](https://github.com/user-attachments/assets/393ab032-7393-48f2-aa32-c8e333a5c770)
@@ -6,10 +6,10 @@ A cool App that allows users to search for a city, display its weather on the ho
 
 ## API Integration
 In order to use the WeatherAPI.com to fetch weather data visti the:
-[WeatherAPI Documentation](https://www.weatherapi.com/docs/) and obtain your personal API KEY.
+[WeatherAPI Documentation](https://www.weatherapi.com/docs/) and obtain your personal `API_Key`.
 
 Once you have your KEY, put it in the `API_Key` section in the `Network/AppEndoints.swift` file.
-Run the project and have fun!
+#### Run the project and have fun!
 
 ##Tech Stack:
 - Swift and SwiftUI
