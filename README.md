@@ -11,7 +11,7 @@ In order to use the WeatherAPI.com to fetch weather data visti the:
 Once you have your KEY, put it in the `API_Key` section in the `Network/AppEndoints.swift` file.
 #### Run the project and have fun!
 
-##Tech Stack:
+## Tech Stack:
 - Swift and SwiftUI
 - MVVM + CLEAN Architecture
 - Use protocol-oriented programming and dependency injection
